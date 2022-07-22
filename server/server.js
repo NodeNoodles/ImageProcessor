@@ -1,10 +1,15 @@
-const readline = require('node:readline/promises');
-const { stdin: input, stdout: output } = require('node:process');
+// // instantiate a server
+// const http = require('http');
+// const fs = require('fs');
+// // const fetch = require('node-fetch');
+// const { answer } = require('../cli/cli.js');
+// const PORT = 3000;
 
-const rl = readline.createInterface({ input, output });
+// const doOnIncoming = (req, res) => {
+//   console.log(answer);
+//   res.end();
+// };
 
-rl.question('is this working?', (answer) => {
-  console.log(`idk, you said ${answer} so probably`);
-});
+// const server = http.createServer(doOnIncoming);
 
-rl.close();
+// server.listen(PORT, () => `listening on port ${PORT}`);

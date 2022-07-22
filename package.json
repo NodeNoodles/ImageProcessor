@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/NodeNoodles/ImageProcessor/issues"
   },
-  "homepage": "https://github.com/NodeNoodles/ImageProcessor#readme"
+  "homepage": "https://github.com/NodeNoodles/ImageProcessor#readme",
+  "dependencies": {
+    "node-fetch": "^3.2.9"
+  }
 }
