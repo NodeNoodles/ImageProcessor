@@ -3,6 +3,7 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 const directoryMap = require('../utils/directoryMap');
+const { checkPrimeSync } = require('crypto');
 // const { stdin: input, stdout: output } = require('process');
 
 const rl = readline.createInterface({
@@ -18,19 +19,32 @@ rl.question('Paste image url: ', async (url) => {
   // console.log(__dirname);
   rl.question('What folder do you want to save this in? ', (folder) => {
     if (directoryMap(folder)) {
-      response.body.pipe(fs.createWriteStream(path.resolve(folder, 'anotherTest.jpeg')));
+      console.log('writing to the folder');
+      response.body.pipe(
+        fs.createWriteStream(path.resolve(folder, 'anotherTest.jpeg'))
+      );
     } else {
       const desktopPath = directoryMap('Desktop');
       if (desktopPath) {
+        console.log('found path to desktop');
         fs.mkdir(path.join(desktopPath, 'ImageProcessor'), (err) => {
+          console.log('making directory for ImageProcessor');
           if (err) {
             console.log('got an error making a directory, ', err);
+          } else {
+            console.log('writing the file to the new directory ImageProcessor');
+            response.body.pipe(
+              fs.createWriteStream(
+                path.join(desktopPath, 'ImageProcessor', 'anotherTest.jpeg')
+              )
+            );
           }
         });
       } else {
         console.log('ur fucked');
       }
     }
+    rl.close();
   });
 
   // console.log(data);
@@ -39,5 +53,4 @@ rl.question('Paste image url: ', async (url) => {
   // )
   //   .pipe(fs.createWriteStream('testfile.jpeg'))
   //   .on('close', () => console.log('done'));
-  rl.close();
 });
