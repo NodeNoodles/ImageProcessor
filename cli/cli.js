@@ -11,46 +11,69 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-rl.question('Paste image url: ', async (url) => {
-  const response = await fetch(
-    'https://imgs.search.brave.com/J3Y-3lT_zrQnrVS8y92fWz6CDD0yGpdwxpymeByTzc0/rs:fit:1200:900:1/g:ce/aHR0cHM6Ly9pbWFn/ZXN2Yy5tZXJlZGl0/aGNvcnAuaW8vdjMv/bW0vaW1hZ2U_dXJs/PWh0dHBzOiUyRiUy/RnN0YXRpYy5vbmVj/bXMuaW8lMkZ3cC1j/b250ZW50JTJGdXBs/b2FkcyUyRnNpdGVz/JTJGMjglMkYyMDE5/JTJGMDglMkZjb3Jn/aS1kb2ctbmFtZS1Q/T1BET0dTMDgxOS5q/cGc'
-  );
-  // const data = await response.blob();
-  // console.log(__dirname);
-  rl.question('What folder do you want to save this in? ', (folder) => {
-    if (directoryMap(folder)) {
-      console.log('writing to the folder');
-      response.body.pipe(
-        fs.createWriteStream(path.resolve(folder, 'anotherTest.jpeg'))
-      );
-    } else {
-      const desktopPath = directoryMap('Desktop');
-      if (desktopPath) {
-        console.log('found path to desktop');
-        fs.mkdir(path.join(desktopPath, 'ImageProcessor'), (err) => {
-          console.log('making directory for ImageProcessor');
-          if (err) {
-            console.log('got an error making a directory, ', err);
-          } else {
-            console.log('writing the file to the new directory ImageProcessor');
+async function downloadFile() {
+  await rl.question('Paste image url: ', async (url) => {
+    const response = await fetch(
+      'https://imgs.search.brave.com/J3Y-3lT_zrQnrVS8y92fWz6CDD0yGpdwxpymeByTzc0/rs:fit:1200:900:1/g:ce/aHR0cHM6Ly9pbWFn/ZXN2Yy5tZXJlZGl0/aGNvcnAuaW8vdjMv/bW0vaW1hZ2U_dXJs/PWh0dHBzOiUyRiUy/RnN0YXRpYy5vbmVj/bXMuaW8lMkZ3cC1j/b250ZW50JTJGdXBs/b2FkcyUyRnNpdGVz/JTJGMjglMkYyMDE5/JTJGMDglMkZjb3Jn/aS1kb2ctbmFtZS1Q/T1BET0dTMDgxOS5q/cGc'
+    );
+    // const data = await response.blob();
+    // console.log(__dirname);
+    console.log(response.body);
+    rl.question('What folder do you want to save this in? ', (folder) => {
+      if (directoryMap(folder)) {
+        console.log('writing to the folder');
+        response.body.pipe(
+          fs.createWriteStream(path.resolve(folder, 'anotherTest.jpeg'))
+        );
+        console.log();
+      } else {
+        const desktopPath = directoryMap('Desktop');
+        if (desktopPath) {
+          console.log('found path to desktop');
+          if (directoryMap(path.join(desktopPath, 'ImageProcessor'))) {
+            console.log(
+              'ImageProcessor already exists, adding the file to folder'
+            );
+            response.body.on('end', () => console.log('placeholder'));
             response.body.pipe(
               fs.createWriteStream(
                 path.join(desktopPath, 'ImageProcessor', 'anotherTest.jpeg')
               )
             );
+            console.log('after pipe method has started');
+          } else {
+            fs.mkdir(path.join(desktopPath, 'ImageProcessor'), (err) => {
+              console.log('making directory for ImageProcessor');
+              if (err) {
+                console.log('got an error making a directory, ', err);
+              } else {
+                console.log(
+                  'writing the file to the new directory ImageProcessor'
+                );
+                response.body.pipe(
+                  fs.createWriteStream(
+                    path.join(desktopPath, 'ImageProcessor', 'anotherTest.jpeg')
+                  )
+                );
+              }
+            });
           }
-        });
-      } else {
-        console.log('ur fucked');
+        } else {
+          console.log('ur fucked');
+        }
       }
-    }
-    rl.close();
-  });
+      rl.close();
+      console.log('inside download file function');
+    });
 
-  // console.log(data);
-  // request(
-  //   'https://imgs.search.brave.com/J3Y-3lT_zrQnrVS8y92fWz6CDD0yGpdwxpymeByTzc0/rs:fit:1200:900:1/g:ce/aHR0cHM6Ly9pbWFn/ZXN2Yy5tZXJlZGl0/aGNvcnAuaW8vdjMv/bW0vaW1hZ2U_dXJs/PWh0dHBzOiUyRiUy/RnN0YXRpYy5vbmVj/bXMuaW8lMkZ3cC1j/b250ZW50JTJGdXBs/b2FkcyUyRnNpdGVz/JTJGMjglMkYyMDE5/JTJGMDglMkZjb3Jn/aS1kb2ctbmFtZS1Q/T1BET0dTMDgxOS5q/cGc'
-  // )
-  //   .pipe(fs.createWriteStream('testfile.jpeg'))
-  //   .on('close', () => console.log('done'));
-});
+    // console.log(data);
+    // request(
+    //   'https://imgs.search.brave.com/J3Y-3lT_zrQnrVS8y92fWz6CDD0yGpdwxpymeByTzc0/rs:fit:1200:900:1/g:ce/aHR0cHM6Ly9pbWFn/ZXN2Yy5tZXJlZGl0/aGNvcnAuaW8vdjMv/bW0vaW1hZ2U_dXJs/PWh0dHBzOiUyRiUy/RnN0YXRpYy5vbmVj/bXMuaW8lMkZ3cC1j/b250ZW50JTJGdXBs/b2FkcyUyRnNpdGVz/JTJGMjglMkYyMDE5/JTJGMDglMkZjb3Jn/aS1kb2ctbmFtZS1Q/T1BET0dTMDgxOS5q/cGc'
+    // )
+    //   .pipe(fs.createWriteStream('testfile.jpeg'))
+    //   .on('close', () => console.log('done'));
+  });
+}
+
+// console.log('outside rl functionality');
+downloadFile();
