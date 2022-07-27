@@ -4,12 +4,51 @@ const fs = require('fs');
 const path = require('path');
 const directoryMap = require('../utils/directoryMap');
 const { checkPrimeSync } = require('crypto');
+// const { opendir } = require('fs/promises');
 // const { stdin: input, stdout: output } = require('process');
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
+
+const directoryThreshold = 100000; // in bytes
+
+function writeToDirectory(responseBody, directory, fileName) {
+  responseBody.pipe(
+    fs.createWriteStream(path.resolve(directory, fileName))
+  );
+}
+
+function readDirectory(directoryPath) {
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error(err);
+    } else {
+      return files; // files is an array of fileNames
+    }
+  })
+}
+
+function readFilesAndDetermineByteSize(filesArray) {
+  let byteSize = 0;
+  for await (const file of filesArray) {
+    fs.stat
+  }
+  return 
+}
+
+
+function saveToDirectory() {
+  rl.question('What folder do you want to save this in?', (folder) => {
+    if (directoryMap(folder)) {
+      // tell them how much space is left in this directory
+      
+
+      console.log('writing to the folder');
+    } else {
+  })
+}
 
 async function downloadFile() {
   await rl.question('Paste image url: ', async (url) => {
