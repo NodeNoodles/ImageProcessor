@@ -19,6 +19,7 @@
   "homepage": "https://github.com/NodeNoodles/ImageProcessor#readme",
   "dependencies": {
     "node": "^18.5.0",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "readable-stream-clone": "^0.0.7"
   }
 }
