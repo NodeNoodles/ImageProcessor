@@ -3,8 +3,8 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const fsPromises = require('fs/promises');
 const path = require('path');
-const directoryMap = require('../utils/directoryMap');
 const ReadableStreamClone = require('readable-stream-clone');
+const directoryMap = require('../utils/directoryMap');
 // const { opendir } = require('fs/promises');
 // const { stdin: input, stdout: output } = require('process');
 
@@ -13,7 +13,7 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-const directoryThreshold = 1000000; // in bytes
+const directoryThreshold = 300000; // in bytes
 
 function writeToDirectory(responseBody, directory, fileName) {
   responseBody.pipe(fs.createWriteStream(path.resolve(directory, fileName)));
@@ -24,31 +24,35 @@ async function readDirectory(directoryPath) {
   if (files) {
     console.log('these are the files in readdir: ', files);
     return files;
-  } else {
-    console.log('files was never resolved');
-    return;
   }
+  console.log('files was never resolved');
 }
 
 async function readFilesAndDetermineByteSize(filesArray, absolutePath) {
   let byteSize = 0;
   console.log('this is the filesArray: ', filesArray);
   for await (const file of filesArray) {
-    let fileInfo = await fsPromises.stat(path.join(absolutePath, file));
+    const fileInfo = await fsPromises.stat(path.join(absolutePath, file));
     byteSize += fileInfo.size;
   }
   return byteSize;
 }
 
-function informDirectorySizeAndPromptDownload(byteSize, filePath) {
+async function informDirectorySizeAndPromptDownload(byteSize, filePath, counter = 1) {
   rl.question(
-    `Currently ${byteSize} in directory. The threshold for this directory is ${directoryThreshold}. Please provide URL for download: `,
+    `Currently ${byteSize} in directory. The threshold for this directory is ${directoryThreshold}. Please provide URL for download (Type STOP to cancel downloads): `,
     async (url) => {
+      if (url.toUpperCase() === 'STOP') {
+        rl.close();
+        return;
+      }
       const extension = path.extname(url);
       console.log('file extension: ', extension);
+      console.log('counter: ', counter);
+      // const tempFilePath = path.join(path.dirname(filePath), `temp/file${counter}${extension}`);
       const tempFilePath = path.join(
-        path.dirname(filePath),
-        `temp/file1${extension}`
+        path.resolve(__dirname, '../'),
+        `temp/file${counter}${extension}`
       );
 
       const response = await fetch(url);
@@ -59,41 +63,74 @@ function informDirectorySizeAndPromptDownload(byteSize, filePath) {
         console.log('fileSize: ', fileSize);
         if (fileSize + byteSize <= directoryThreshold) {
           responseCopy.pipe(
-            fs.createWriteStream(path.join(filePath, `file1${extension}`))
+            fs.createWriteStream(path.join(filePath, `file${counter}${extension}`))
           );
+          await fsPromises.unlink(tempFilePath);
+          await informDirectorySizeAndPromptDownload(fileSize + byteSize, filePath, counter + 1);
         } else {
-          console.log(
-            'file is too big for this directory, exceeded maximum threshold'
-          );
+          console.log('file is too big for this directory, exceeded maximum threshold');
+          await fsPromises.unlink(tempFilePath);
+          rl.close();
         }
-        await fsPromises.unlink(tempFilePath);
-        rl.close();
       });
     }
   );
 }
-informDirectorySizeAndPromptDownload(
-  74797,
-  '/Users/aramkrakirian/Desktop/Codesmith/Node-UTH/ImageProcessor/cli'
-);
+// informDirectorySizeAndPromptDownload(74797, path.resolve(__dirname, '../cli'));
 
 async function saveToDirectory() {
-  rl.question('What folder do you want to save this in?', async (folder) => {
+  rl.question('What folder do you want to save this in? ', async (folder) => {
     const absoluteFilePath = directoryMap(folder);
     console.log('absolute file path: ', absoluteFilePath);
     if (absoluteFilePath) {
       // tell them how much space is left in this directory
       const filesInDirectory = await readDirectory(absoluteFilePath);
       console.log('this is the filesInDirectory: ', filesInDirectory);
-      const byteSize = await readFilesAndDetermineByteSize(
-        filesInDirectory,
-        absoluteFilePath
-      );
+      const byteSize = await readFilesAndDetermineByteSize(filesInDirectory, absoluteFilePath);
       console.log('byteSize: ', byteSize);
       console.log('writing to the folder');
+      informDirectorySizeAndPromptDownload(byteSize, absoluteFilePath);
+    } else {
+      const desktopPath = await directoryMap('Desktop');
+      console.log('hit the desktopPath: ', desktopPath);
+      if (desktopPath) {
+        console.log('found path to desktop');
+        const imageProcessorDirectory = path.join(desktopPath, 'ImageProcessor');
+        if (directoryMap(imageProcessorDirectory)) {
+          console.log('ImageProcessor already exists');
+          const filesInDirectory = await readDirectory(imageProcessorDirectory);
+          const byteSize = await readFilesAndDetermineByteSize(
+            filesInDirectory,
+            imageProcessorDirectory
+          );
+          informDirectorySizeAndPromptDownload(byteSize, imageProcessorDirectory);
+        } else {
+          fs.mkdir(path.join(desktopPath, 'ImageProcessor'), async (err) => {
+            console.log('making directory for ImageProcessor');
+            if (err) {
+              console.log('got an error making a directory, ', err);
+            } else {
+              console.log('writing the file to the new directory ImageProcessor');
+              // next add files to imageProcessorDirectory
+              const filesInDirectory = await readDirectory(imageProcessorDirectory);
+              const byteSize = await readFilesAndDetermineByteSize(
+                filesInDirectory,
+                imageProcessorDirectory
+              );
+              informDirectorySizeAndPromptDownload(byteSize, imageProcessorDirectory);
+            }
+          });
+        }
+      } else {
+        console.log('ur fucked');
+      }
     }
+    // rl.close();
+    // console.log('inside download file function');
   });
 }
+
+saveToDirectory();
 
 // test URL
 // https://s3.amazonaws.com/cdn-origin-etr.akc.org/wp-content/uploads/2021/12/30151747/Pembroke-Welsh-Corgi-smiling-and-happy-outdoors.jpeg
